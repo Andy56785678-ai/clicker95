@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clicker95 v1.0</title>
+    <style>
+        :root {
+            --win-bg: #008080;
+            --win-gray: #c0c0c0;
+            --win-white: #ffffff;
+            --win-dark: #808080;
+            --win-black: #000000;
+            --win-blue: #000080;
+            --win-border-light: #dfdfdf;
+            --win-border-dark: #7b7b7b;
+        }
+
+        * {
+            box-sizing: border-box;
+            image-rendering: pixelated;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: "MS Sans Serif", "Tahoma", sans-serif;
+            background-color: var(--win-black);
+        }
+
+        /* Windows 3.1 Mode Styling */
+        .win31 body, .win31 #desktop {
+            background-color: #008080;
+        }
+        
+        .win31 .window {
+            border: 1px solid #000;
+            box-shadow: 2px 2px 0px #000;
+            background: #fff; /* Win 3.1 windows were often white-backed */
+        }
+        
+        .win31 .title-bar {
+            background: #000080;
+            color: #fff;
+            border-bottom: 1px solid #000;
+            font-weight: bold;
+            justify-content: center;
+        }
+
+        .win31 .button {
+            background: #fff;
+            border: 1px solid #000;
+            box-shadow: 1px 1px 0px #000;
+        }
+
+        /* Boot Screen */
+        #boot-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #fff;
+            background: #000;
+            z-index: 1000;
+            position: absolute;
+            width: 100%;
+        }
+
+        .boot-logo {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .start-btn {
+            background: var(--win-gray);
+            border: 2px solid;
+            border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+            padding: 10px 30px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Desktop Environment */
+        #desktop {
+            display: none;
+            width: 100%;
+            height: 100%;
+            background-color: var(--win-bg);
+            position: relative;
+            padding: 20px;
+        }
+
+        #desktop.win98 {
+            background-color: #3a6ea5;
+        }
+
+        /* Desktop Icons */
+        .desktop-icon {
+            width: 70px;
+            height: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 1px #000;
+            user-select: none;
+        }
+
+        .desktop-icon:hover {
+            background: rgba(0, 0, 128, 0.3);
+        }
+
+        .icon-img {
+            width: 32px;
+            height: 32px;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        /* Window Styling */
+        .window {
+            position: absolute;
+            background: var(--win-gray);
+            border: 2px solid;
+            border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+            box-shadow: 1px 1px 0px var(--win-black);
+            width: 380px;
+            user-select: none;
+            z-index: 10;
+        }
+
+        .title-bar {
+            background: var(--win-blue);
+            padding: 3px 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: 14px;
+            cursor: move;
+        }
+
+        .win98 .title-bar {
+            background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+        }
+
+        .window-content {
+            padding: 15px;
+        }
+
+        /* MS-DOS Executive Header */
+        .dos-exec-header {
+            background: #000080;
+            color: white;
+            padding: 2px 5px;
+            font-size: 12px;
+            display: none;
+        }
+        .win31 .dos-exec-header { display: block; }
+
+        .dos-exec-path {
+            background: #fff;
+            border: 1px solid #000;
+            color: #000;
+            padding: 2px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* Buttons and Controls */
+        .button {
+            background: var(--win-gray);
+            border: 2px solid;
+            border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+            padding: 5px 10px;
+            cursor: pointer;
+            margin: 5px 0;
+            display: block;
+            width: 100%;
+            text-align: left;
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        .button:active:not(:disabled) {
+            border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+            padding: 6px 9px 4px 11px;
+        }
+
+        .button:disabled {
+            color: var(--win-dark);
+            cursor: default;
+        }
+
+        .click-area {
+            background: var(--win-white);
+            border: 2px inset var(--win-border-dark);
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin-bottom: 10px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        /* Taskbar (Hidden in Win 3.1) */
+        #taskbar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30px;
+            background: var(--win-gray);
+            border-top: 2px solid var(--win-border-light);
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            z-index: 200;
+        }
+
+        .win31 #taskbar { display: none !important; }
+
+        .start-menu-btn {
+            height: 24px;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-right: 5px;
+            width: auto;
+        }
+
+        /* Start Menu */
+        #start-menu {
+            display: none;
+            position: absolute;
+            bottom: 30px;
+            left: 2px;
+            width: 180px;
+            background: var(--win-gray);
+            border: 2px solid;
+            border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+            z-index: 300;
+        }
+
+        .start-menu-sidebar {
+            width: 25px;
+            background: linear-gradient(0deg, #000080 0%, #808080 100%);
+            display: flex;
+            align-items: flex-end;
+            padding-bottom: 10px;
+        }
+
+        .start-menu-sidebar span {
+            color: white;
+            transform: rotate(-90deg);
+            white-space: nowrap;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .start-menu-item {
+            padding: 8px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .start-menu-item:hover {
+            background: var(--win-blue);
+            color: white;
+        }
+
+        .stat-box {
+            border: 2px inset var(--win-border-dark);
+            background: var(--win-white);
+            padding: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .upgrade-list {
+            max-height: 160px;
+            overflow-y: scroll;
+            border: 2px inset var(--win-border-dark);
+            background: #eee;
+            padding: 5px;
+        }
+
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #save-input {
+            width: 100%;
+            border: 2px inset var(--win-border-dark);
+            padding: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Boot Sequence -->
+    <div id="boot-screen">
+        <div class="boot-logo">
+            <div style="font-size: 48px; margin-bottom: 10px;">Microsoft</div>
+            <div style="font-size: 32px; font-weight: bold;" id="boot-title">Clicker95 v1.0</div>
+        </div>
+        <div id="boot-options" class="hidden" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 5px; width: 200px;">
+            <button class="button" onclick="switchSystem('win31')">Windows 3.1</button>
+            <button class="button" onclick="switchSystem('win95')">Windows 95</button>
+            <button class="button" onclick="switchSystem('win98')">Windows 98</button>
+        </div>
+        <button class="start-btn" id="master-start-btn" onclick="startSystem()">START</button>
+    </div>
+
+    <!-- Main Desktop -->
+    <div id="desktop">
+        
+        <!-- Icons on Desktop -->
+        <div class="desktop-icon" ondblclick="openWindow('game-window')">
+            <div class="icon-img">💻</div>
+            <span>System</span>
+        </div>
+        <div class="desktop-icon" ondblclick="openWindow('shop-window')">
+            <div class="icon-img">🛍️</div>
+            <span>Shop</span>
+        </div>
+        <div class="desktop-icon" id="boot-icon" style="display:none;" ondblclick="showBootMenu()">
+            <div class="icon-img">🔄</div>
+            <span>Boot Menu</span>
+        </div>
+
+        <!-- Game Window -->
+        <div class="window" id="game-window" style="left: 100px; top: 50px;">
+            <div class="title-bar" onmousedown="dragElement(this.parentElement)">
+                <span id="processor-name">Clicker 95:i80386DX</span>
+                <div onclick="closeWindow('game-window')" style="background: var(--win-gray); width: 16px; height: 14px; border: 1px solid #000; color: #000; font-size: 10px; text-align: center; line-height: 12px; cursor: pointer;">X</div>
+            </div>
+            <div class="dos-exec-header">File Disk Tree View Options Window Help</div>
+            <div class="window-content">
+                <div class="win31-only hidden">
+                    <div class="dos-exec-path">C:\CLICKER\*.*</div>
+                </div>
+                
+                <div class="stat-box" id="points-display">Resources: 0 bits</div>
+                <div class="stat-box" id="pps-display" style="font-size: 10px;">Production: 0 bits/s</div>
+                
+                <div class="click-area" onclick="handleClick()">
+                    <div id="click-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+                        </svg>
+                    </div>
+                    <div style="margin-top: 10px;" id="click-label">CLICK TO PROCESS</div>
+                </div>
+
+                <div class="upgrade-list">
+                    <button class="button" id="upg-ram" onclick="buyUpgrade('ram')">RAM Upgrade</button>
+                    <button class="button" id="upg-floppy" onclick="buyUpgrade('floppy')">Floppy Drive</button>
+                    <button class="button" id="upg-modem" onclick="buyUpgrade('modem')">56k Modem</button>
+                    <button class="button" id="upg-hd" onclick="buyUpgrade('hd')">1GB Hard Drive</button>
+                    <button class="button" id="upg-os" onclick="buyWindows98()" style="color: #000080; font-weight: bold;">WINDOWS 98 UPGRADE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shop Window -->
+        <div class="window hidden" id="shop-window" style="left: 450px; top: 100px; width: 300px;">
+            <div class="title-bar" onmousedown="dragElement(this.parentElement)">
+                <span>Bit-Exchange & Shop</span>
+                <div onclick="closeWindow('shop-window')" style="background: var(--win-gray); width: 16px; height: 14px; border: 1px solid #000; color: #000; font-size: 10px; text-align: center; line-height: 12px; cursor: pointer;">X</div>
+            </div>
+            <div class="window-content">
+                <div class="stat-box" id="byite-display">Balance: 0 Byites</div>
+                <button class="button" onclick="convertToByite()">Convert 10,000 Bits → 1 Byite</button>
+                <div style="border-top: 2px groove #fff; margin: 10px 0;"></div>
+                <div style="font-size: 11px; margin-bottom: 5px;">Premium Software:</div>
+                <button class="button" id="buy-win31" onclick="buyWin31()">Windows 3.1 Retro Kit (20 Byites)</button>
+            </div>
+        </div>
+
+        <!-- Start Menu Popup -->
+        <div id="start-menu">
+            <div style="display: flex;">
+                <div class="start-menu-sidebar"><span>Clicker95</span></div>
+                <div style="flex-grow: 1;">
+                    <div class="start-menu-item" onclick="showSaveDialog()">💾 Save Progress</div>
+                    <div class="start-menu-item" onclick="showLoadDialog()">📂 Load Progress</div>
+                    <div style="border-top: 1px solid #808080; margin: 5px 0;"></div>
+                    <div class="start-menu-item" onclick="location.reload()">🔒 Shut Down...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Taskbar -->
+        <div id="taskbar">
+            <button class="button start-menu-btn" onclick="toggleStartMenu()">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAG1JREFUeNpi/P//PwMlgImBQsD4+DhmXBRMAnv27AExGBvEQBa6BvESf9XfA/ESf23fA+ISf2XfA+ISf1nfAyITf0XfA+IyfznfAyImfynfA6Imf8nfA6Km/4PfA6Ku/4PfgYmBkYFCAAgwAEYmF6Vz4m9VAAAAAElFTkSuQmCC" style="width: 14px; margin-right: 4px;">
+                Start
+            </button>
+            <div class="system-tray" id="clock" style="margin-left: auto; border: 2px inset var(--win-border-dark); padding: 0 5px; font-size: 11px;">12:00 PM</div>
+        </div>
+    </div>
+
+    <!-- Save/Load Modal -->
+    <div id="modal-overlay">
+        <div class="window" style="width: 300px; position: static;">
+            <div class="title-bar"><span id="modal-title">System Message</span></div>
+            <div class="window-content">
+                <div id="modal-desc"></div>
+                <input type="text" id="save-input">
+                <div style="display: flex; gap: 5px;">
+                    <button class="button" id="modal-action-btn">Action</button>
+                    <button class="button" onclick="closeModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            points: 0,
+            byites: 0,
+            clickValue: 1,
+            autoValue: 0,
+            multiplier: 1,
+            isWin98: false,
+            hasWin31: false,
+            currentSystem: 'win95',
+            upgrades: {
+                ram: { count: 0, cost: 15 },
+                floppy: { count: 0, cost: 50 },
+                modem: { count: 0, cost: 250 },
+                hd: { count: 0, cost: 1000 }
+            }
+        };
+
+        function startSystem() {
+            document.getElementById('boot-screen').style.display = 'none';
+            document.getElementById('desktop').style.display = 'block';
+            updateDisplay();
+            setInterval(() => { state.points += (state.autoValue * state.multiplier) / 10; updateDisplay(); }, 100);
+            setInterval(updateClock, 1000);
+            updateClock();
+        }
+
+        function switchSystem(sys) {
+            state.currentSystem = sys;
+            const desktop = document.getElementById('desktop');
+            const proc = document.getElementById('processor-name');
+            const icon = document.getElementById('click-icon');
+            const label = document.getElementById('click-label');
+            const win31UIs = document.querySelectorAll('.win31-only');
+            
+            desktop.classList.remove('win98', 'win31');
+            document.body.classList.remove('win31');
+            win31UIs.forEach(el => el.classList.add('hidden'));
+            
+            if (sys === 'win98') {
+                desktop.classList.add('win98');
+                proc.innerText = "Clicker 98:i80486";
+                label.innerText = "CLICK TO PROCESS";
+                icon.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" /></svg>`;
+                state.multiplier = 2;
+            } else if (sys === 'win31') {
+                desktop.classList.add('win31');
+                document.body.classList.add('win31');
+                proc.innerText = "MS-DOS Executive";
+                label.innerText = "Double-click to Execute";
+                icon.innerHTML = `<div style="border: 2px solid #000; padding: 10px; font-weight: bold; font-family: 'Fixedsys', monospace;">CLICKER.EXE</div>`;
+                win31UIs.forEach(el => el.classList.remove('hidden'));
+                state.multiplier = 3.1;
+            } else {
+                proc.innerText = "Clicker 95:i80386DX";
+                label.innerText = "CLICK TO PROCESS";
+                icon.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" /></svg>`;
+                state.multiplier = 1;
+            }
+            startSystem();
+        }
+
+        function showBootMenu() {
+            if (state.currentSystem === 'win95' || state.currentSystem === 'win98') {
+                toggleStartMenu();
+            }
+            document.getElementById('desktop').style.display = 'none';
+            document.getElementById('boot-screen').style.display = 'flex';
+            document.getElementById('boot-options').classList.remove('hidden');
+            document.getElementById('master-start-btn').classList.add('hidden');
+            document.getElementById('boot-title').innerText = "Select Operating System";
+        }
+
+        function handleClick() {
+            state.points += (state.clickValue * state.multiplier);
+            updateDisplay();
+        }
+
+        function convertToByite() {
+            if (state.points >= 10000) {
+                state.points -= 10000;
+                state.byites += 1;
+                updateDisplay();
+            }
+        }
+
+        function buyWin31() {
+            if (state.byites >= 20 && !state.hasWin31) {
+                state.byites -= 20;
+                state.hasWin31 = true;
+                checkBootMenuUnlock();
+                updateDisplay();
+            }
+        }
+
+        function checkBootMenuUnlock() {
+            if (state.isWin98 && state.hasWin31) {
+                document.getElementById('boot-icon').style.display = 'flex';
+            }
+        }
+
+        function buyUpgrade(type) {
+            let upg = state.upgrades[type];
+            if (state.points >= upg.cost) {
+                state.points -= upg.cost;
+                upg.count++;
+                if (type === 'ram') state.clickValue += 1;
+                if (type === 'floppy') state.autoValue += 2;
+                if (type === 'modem') state.autoValue += 10;
+                if (type === 'hd') state.autoValue += 50;
+                upg.cost = Math.floor(upg.cost * 1.3);
+                updateDisplay();
+            }
+        }
+
+        function buyWindows98() {
+            if (state.points >= 5000) {
+                state.points -= 5000;
+                state.isWin98 = true;
+                if (state.currentSystem === 'win95') {
+                    state.multiplier = 2;
+                    document.getElementById('desktop').classList.add('win98');
+                    document.getElementById('processor-name').innerText = "Clicker 98:i80486";
+                }
+                document.getElementById('upg-os').style.display = 'none';
+                checkBootMenuUnlock();
+                updateDisplay();
+            }
+        }
+
+        function openWindow(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        
+        function closeWindow(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function updateDisplay() {
+            document.getElementById('points-display').innerText = `Resources: ${Math.floor(state.points)} bits`;
+            document.getElementById('pps-display').innerText = `Production: ${(state.autoValue * state.multiplier).toFixed(1)} bits/s`;
+            document.getElementById('byite-display').innerText = `Balance: ${state.byites} ${state.byites === 1 ? 'Byite' : 'Byites'}`;
+            
+            document.getElementById('upg-ram').innerText = `RAM Upgrade (${state.upgrades.ram.cost})`;
+            document.getElementById('upg-floppy').innerText = `Floppy Drive (${state.upgrades.floppy.cost})`;
+            document.getElementById('upg-modem').innerText = `56k Modem (${state.upgrades.modem.cost})`;
+            document.getElementById('upg-hd').innerText = `1GB Hard Drive (${state.upgrades.hd.cost})`;
+            
+            ['ram', 'floppy', 'modem', 'hd'].forEach(u => {
+                document.getElementById('upg-' + u).disabled = state.points < state.upgrades[u].cost;
+            });
+            if (document.getElementById('upg-os')) {
+                document.getElementById('upg-os').disabled = state.points < 5000;
+                if (state.isWin98) document.getElementById('upg-os').style.display = 'none';
+            }
+            
+            const win31Btn = document.getElementById('buy-win31');
+            win31Btn.disabled = state.byites < 20 || state.hasWin31;
+            if (state.hasWin31) win31Btn.innerText = "Windows 3.1 Unlocked";
+        }
+
+        function toggleStartMenu() {
+            const menu = document.getElementById('start-menu');
+            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        }
+
+        document.getElementById('desktop').addEventListener('click', (e) => {
+            if (!e.target.closest('.start-menu-btn') && !e.target.closest('#start-menu')) {
+                document.getElementById('start-menu').style.display = 'none';
+            }
+        });
+
+        // --- Save / Load Logic ---
+        function generateSaveCode() {
+            let pStr = Math.floor(state.points).toString().padStart(10, '0');
+            if (pStr.length > 10) pStr = "9999999999"; 
+            let uStr = "";
+            uStr += state.upgrades.ram.count.toString().padStart(3, '0');
+            uStr += state.upgrades.floppy.count.toString().padStart(3, '0');
+            uStr += state.upgrades.modem.count.toString().padStart(3, '0');
+            uStr += state.upgrades.hd.count.toString().padStart(3, '0');
+            uStr += state.isWin98 ? "1" : "0";
+            uStr += state.hasWin31 ? "1" : "0";
+            uStr += state.byites.toString().padStart(5, '0');
+            return pStr + uStr;
+        }
+
+        function loadSaveCode(code) {
+            try {
+                if (code.length < 10) throw "Invalid";
+                state.points = parseInt(code.substring(0, 10));
+                state.upgrades.ram.count = parseInt(code.substring(10, 13)) || 0;
+                state.upgrades.floppy.count = parseInt(code.substring(13, 16)) || 0;
+                state.upgrades.modem.count = parseInt(code.substring(16, 19)) || 0;
+                state.upgrades.hd.count = parseInt(code.substring(19, 22)) || 0;
+                state.isWin98 = code.substring(22, 23) === "1";
+                state.hasWin31 = code.substring(23, 24) === "1";
+                state.byites = parseInt(code.substring(24, 29)) || 0;
+
+                // Re-calculate derived values
+                state.clickValue = 1 + state.upgrades.ram.count;
+                state.autoValue = (state.upgrades.floppy.count * 2) + (state.upgrades.modem.count * 10) + (state.upgrades.hd.count * 50);
+                
+                // Keep existing system or set to Win 98 if owned
+                if (state.isWin98 && state.currentSystem === 'win95') switchSystem('win98');
+                
+                Object.keys(state.upgrades).forEach(u => {
+                    let base = {ram: 15, floppy: 50, modem: 250, hd: 1000}[u];
+                    state.upgrades[u].cost = Math.floor(base * Math.pow(1.3, state.upgrades[u].count));
+                });
+
+                checkBootMenuUnlock();
+                updateDisplay();
+                closeModal();
+            } catch(e) {
+                alert("Corrupt system file: Load failed.");
+            }
+        }
+
+        function showSaveDialog() {
+            if (state.currentSystem !== 'win31') toggleStartMenu();
+            const code = generateSaveCode();
+            document.getElementById('modal-overlay').style.display = 'flex';
+            document.getElementById('modal-title').innerText = "Export Data";
+            document.getElementById('modal-desc').innerText = "Save code copied to clipboard:";
+            document.getElementById('save-input').value = code;
+            document.getElementById('modal-action-btn').innerText = "Copy Again";
+            document.getElementById('modal-action-btn').onclick = () => {
+                document.getElementById('save-input').select();
+                document.execCommand('copy');
+            };
+            document.getElementById('save-input').select();
+            document.execCommand('copy');
+        }
+
+        function showLoadDialog() {
+            if (state.currentSystem !== 'win31') toggleStartMenu();
+            document.getElementById('modal-overlay').style.display = 'flex';
+            document.getElementById('modal-title').innerText = "Import Data";
+            document.getElementById('modal-desc').innerText = "Paste your save code below:";
+            document.getElementById('save-input').value = "";
+            document.getElementById('modal-action-btn').innerText = "Execute";
+            document.getElementById('modal-action-btn').onclick = () => {
+                loadSaveCode(document.getElementById('save-input').value);
+            };
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        function updateClock() {
+            const now = new Date();
+            let h = now.getHours();
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            document.getElementById('clock').innerText = `${h}:${m} ${ampm}`;
+        }
+
+        function dragElement(elmnt) {
+            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+            const titleBar = elmnt.querySelector('.title-bar');
+            titleBar.onmousedown = (e) => {
+                e.preventDefault();
+                p3 = e.clientX; p4 = e.clientY;
+                document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+                document.onmousemove = (e) => {
+                    e.preventDefault();
+                    p1 = p3 - e.clientX; p2 = p4 - e.clientY;
+                    p3 = e.clientX; p4 = e.clientY;
+                    elmnt.style.top = (elmnt.offsetTop - p2) + "px";
+                    elmnt.style.left = (elmnt.offsetLeft - p1) + "px";
+                };
+            };
+        }
+        dragElement(document.getElementById('game-window'));
+        dragElement(document.getElementById('shop-window'));
+    </script>
+</body>
+</html>
